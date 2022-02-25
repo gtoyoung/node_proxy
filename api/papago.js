@@ -5,6 +5,16 @@ var client_id = process.env.PAPAGO_CLIENT_ID;
 var client_secret = process.env.PAPAGO_CLIENT_SECRET;
 
 app.post("/", function (req, res) {
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
   var query = req.body.query;
   var api_url = "https://openapi.naver.com/v1/papago/n2mt";
   var request = require("request");

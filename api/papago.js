@@ -32,7 +32,6 @@ app.post("/", function (req, res) {
       res.end(body);
     } else {
       res.status(response.statusCode).end();
-      console.log("error = " + response.statusCode);
     }
   });
 });

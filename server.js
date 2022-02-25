@@ -4,7 +4,7 @@ require("dotenv").config();
 var client_id = process.env.PAPAGO_CLIENT_ID;
 var client_secret = process.env.PAPAGO_CLIENT_SECRET;
 
-app.get("/translate", function (req, res) {
+app.post("/translate", function (req, res) {
   var query = req.body.query;
   var api_url = "https://openapi.naver.com/v1/papago/n2mt";
   var request = require("request");
@@ -26,6 +26,11 @@ app.get("/translate", function (req, res) {
     }
   });
 });
+
+app.get("/", function (req, res) {
+  res.send("WELCOM! DOVB`s API PROXY SERVER");
+});
+
 app.listen(3000, function () {
   console.log("proxy server입니다.");
 });

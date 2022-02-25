@@ -6,7 +6,7 @@ app.use(express.json({ extended: true }));
 app.use("/api/translate", papago);
 
 app.get("/", function (req, res) {
-  res.send("WELCOM! DOVB`s API PROXY SERVER");
+  res.send("WELCOM! DOVB`S API PROXY SERVER");
 });
 
 const PORT = process.env.PORT || 80;

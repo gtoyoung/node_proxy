@@ -22,7 +22,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-    console.log("Connected correctly to server");
+    console.log("Get Token 서비스 시작");
     const database = client.db("google");
     const tokens = database.collection("fcm_token");
 
@@ -40,6 +40,7 @@ async function run() {
     console.log(e);
     return null;
   } finally {
+    console.log("Get Token 서비스 끝");
     await client.close();
   }
 }
@@ -47,7 +48,7 @@ async function run() {
 async function insert(token) {
   try {
     await client.connect();
-    console.log("Connected correctly to server");
+    console.log("Insert 서비스 시작");
     const database = client.db("google");
     const tokens = database.collection("fcm_token");
 
@@ -65,6 +66,7 @@ async function insert(token) {
     console.log(e);
     return "fail";
   } finally {
+    console.log("Insert 서비스 끝");
     await client.close();
   }
 }
@@ -72,6 +74,7 @@ async function insert(token) {
 async function update(token, notification) {
   try {
     await client.connect();
+    console.log("Update 서비스 시작");
     const database = client.db("google");
     const tokens = database.collection("fcm_token");
     const filter = { token: token };
@@ -83,32 +86,47 @@ async function update(token, notification) {
     console.log(e);
     return false;
   } finally {
+    console.log("Update 서비스 끝");
     await client.close();
   }
 }
 
 app.get("/push", function (req, res) {
+  var msg = req.body.msg;
   run().then((result) => {
-    result.map((token) => {
-      const message = {
-        notification: {
-          title: "Dovb`s Blog Push Test",
-          body: "메세지가 잘 가나요?",
-        },
-        token: token.token,
-      };
-      admin
-        .messaging()
-        .send(message)
-        .then((response) => {
-          res.send("Successfully sent message");
-          console.log("Successfully sent message:", response);
-        })
-        .catch((error) => {
-          res.send("fail sent message");
-          console.log(error);
-        });
-    });
+    if (result.length !== 0) {
+      result.map((token) => {
+        const message = {
+          notification: {
+            title: "Dovb`s Blog",
+            body: msg === undefined ? "Please Visit My Blog" : msg,
+          },
+          webpush: {
+            notification: {
+              requireInteraction: true,
+              icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+            },
+            fcm_options: {
+              link: "https://dovb.vercel.app/",
+            },
+          },
+          token: token.token,
+        };
+        admin
+          .messaging()
+          .send(message)
+          .then((response) => {
+            res.send("Successfully sent message");
+            console.log("Successfully sent message:", response);
+          })
+          .catch((error) => {
+            res.send("fail sent message");
+            console.log(error);
+          });
+      });
+    } else {
+      res.send("Nothing to send");
+    }
   });
 });
 

@@ -45,6 +45,25 @@ async function run() {
   }
 }
 
+async function findOne(token) {
+  try {
+    await client.connect();
+    console.log("FindOne 서비스 시작");
+    const database = client.db("google");
+    const tokens = database.collection("fcm_token");
+
+    const query = { token: token };
+
+    const result = await tokens.findOne(query);
+    return result;
+  } catch (e) {
+    console.log(e);
+    return null;
+  } finally {
+    await client.close();
+  }
+}
+
 async function insert(token) {
   try {
     await client.connect();
@@ -131,7 +150,7 @@ app.get("/push", function (req, res) {
 });
 
 // 토큰 리스트 가져오기
-app.get("/getToken", function (req, res) {
+app.get("/getTokens", function (req, res) {
   run()
     .then((data) => {
       console.log(data);
@@ -156,6 +175,18 @@ app.post("/updateToken", function (req, res) {
   var token = req.body.token;
   var notification = req.body.notification;
   update(token, notification)
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(res.statusCode).end();
+      console.log(err);
+    });
+});
+
+app.post("/get", function (req, res) {
+  var token = req.body.token;
+  findOne(token)
     .then((data) => {
       res.send(data);
     })

@@ -110,6 +110,23 @@ async function update(token, notification) {
   }
 }
 
+async function setRole() {
+  try {
+    return await admin
+      .auth()
+      .setCustomUserClaims("GirZPD6UqNb0BQi1ncATOPtEU672", { admin: true })
+      .then(() => {
+        return true;
+      })
+      .catch(() => {
+        return false;
+      });
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
+
 app.get("/push", function (req, res) {
   var msg = req.body.msg;
   run().then((result) => {
@@ -193,6 +210,16 @@ app.post("/get", function (req, res) {
     .catch((err) => {
       res.status(res.statusCode).end();
       console.log(err);
+    });
+});
+
+app.get("/setAdmin", function (req, res) {
+  setRole()
+    .then(() => {
+      res.send(true);
+    })
+    .catch(() => {
+      res.send(false);
     });
 });
 

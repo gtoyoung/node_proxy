@@ -90,6 +90,24 @@ async function insert(token) {
   }
 }
 
+async function deleteToken(token) {
+  try {
+    await client.connect();
+    console.log("Delete 서비스 시작");
+    const database = client.db("google");
+    const tokens = database.collection("fcm_token");
+    const filter = { token: token };
+    await tokens.deleteOne(filter);
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  } finally {
+    console.log("Delete 서비스 끝");
+    await client.close();
+  }
+}
+
 async function update(token, notification) {
   try {
     await client.connect();
@@ -127,7 +145,23 @@ async function setRole() {
   }
 }
 
-app.get("/push", function (req, res) {
+async function getUserList(uid) {
+  try {
+    return await admin
+      .auth()
+      .getUser(uid)
+      .then((user) => {
+        // admin 권한이 있는 유저인지 확인
+        if (user.customClaims["admin"]) {
+          return admin.auth().getUsers();
+        }
+      });
+  } catch (e) {
+    return null;
+  }
+}
+
+app.post("/push", function (req, res) {
   var msg = req.body.msg;
   run().then((result) => {
     if (result.length !== 0) {
@@ -135,7 +169,8 @@ app.get("/push", function (req, res) {
         const message = {
           notification: {
             title: "Dovb`s Blog",
-            body: msg === undefined ? "Please Visit My Blog" : msg,
+            body:
+              msg === undefined || msg === "" ? "Please Visit My Blog" : msg,
           },
           webpush: {
             notification: {
@@ -153,11 +188,12 @@ app.get("/push", function (req, res) {
           .send(message)
           .then((response) => {
             res.send("Successfully sent message");
-            console.log("Successfully sent message:", response);
+            //console.log("Successfully sent message:", response);
           })
-          .catch((error) => {
-            res.send("fail sent message");
-            console.log(error);
+          .catch(async (error) => {
+            // 기한이 만료되었거나 등록된 앱이나 브라우저가 제거되었을 경우
+            // 토큰은 더이상 제대로 동작하지 않으므로 제거해줘야함
+            await deleteToken(token.token);
           });
       });
     } else {
@@ -220,6 +256,16 @@ app.get("/setAdmin", function (req, res) {
     })
     .catch(() => {
       res.send(false);
+    });
+});
+
+app.post("/getUsers", function (req, res) {
+  getUserList(req.query.uid)
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.send(null);
     });
 });
 

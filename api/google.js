@@ -153,7 +153,15 @@ async function getUserList(uid) {
       .then((user) => {
         // admin 권한이 있는 유저인지 확인
         if (user.customClaims["admin"]) {
-          return admin.auth().getUsers();
+          return admin
+            .auth()
+            .listUsers()
+            .then((results) => {
+              return results.users;
+            })
+            .catch(() => {
+              return null;
+            });
         }
       });
   } catch (e) {
@@ -161,7 +169,58 @@ async function getUserList(uid) {
   }
 }
 
-app.post("/push", function (req, res) {
+async function getUserInfo(uid) {
+  try {
+    return await admin
+      .auth()
+      .getUser(uid)
+      .then((user) => {
+        return user;
+      })
+      .catch(() => {
+        return null;
+      });
+  } catch (e) {
+    return null;
+  }
+}
+
+app.post("/pushForUser", function (req, res) {
+  var msg = req.body.msg;
+  var tokens = req.body.tokens;
+  tokens.map((token) => {
+    const message = {
+      notification: {
+        title: "Dovb`s Blog",
+        body: msg,
+      },
+      webpush: {
+        notification: {
+          requireInteraction: true,
+          icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+        },
+        fcm_options: {
+          link: "https://dovb.vercel.app/",
+        },
+      },
+      token: token,
+    };
+
+    admin
+      .messaging()
+      .send(message)
+      .then((response) => {
+        console.log("Successfully sent message:", response);
+      })
+      .catch(async (error) => {
+        console.log("Error sending message:", error);
+        await deleteToken(token);
+      });
+  });
+  res.send(true);
+});
+
+app.post("/pushAll", function (req, res) {
   var msg = req.body.msg;
   run().then((result) => {
     if (result.length !== 0) {
@@ -224,6 +283,7 @@ app.post("/insertToken", function (req, res) {
     });
 });
 
+// 알림 사용 여부 업데이트
 app.post("/updateToken", function (req, res) {
   var token = req.body.token;
   var notification = req.body.notification;
@@ -237,6 +297,7 @@ app.post("/updateToken", function (req, res) {
     });
 });
 
+// 토큰 정보 가져오기
 app.post("/get", function (req, res) {
   var token = req.body.token;
   findOne(token)
@@ -249,22 +310,38 @@ app.post("/get", function (req, res) {
     });
 });
 
+// 사용자 역할 지정하기(우선 관리자만)
 app.get("/setAdmin", function (req, res) {
   setRole()
     .then(() => {
       res.send(true);
     })
     .catch(() => {
+      res.status(res.statusCode).end();
       res.send(false);
     });
 });
 
+// 유저 리스트 가져오기
 app.post("/getUsers", function (req, res) {
-  getUserList(req.query.uid)
+  getUserList(req.body.uid)
     .then((data) => {
       res.send(data);
     })
     .catch((err) => {
+      res.status(res.statusCode).end();
+      res.send(null);
+    });
+});
+
+// 유저 정보 가져오기
+app.post("/getUserInfo", function (req, res) {
+  getUserInfo(req.body.uid)
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(res.statusCode).end();
       res.send(null);
     });
 });

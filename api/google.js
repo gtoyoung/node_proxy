@@ -210,10 +210,10 @@ app.post("/pushForUser", function (req, res) {
       .messaging()
       .send(message)
       .then((response) => {
-        res.send("Successfully sent message");
+        // res.send("Successfully sent message");
       })
       .catch(async (error) => {
-        await deleteToken(token);
+        // await deleteToken(token);
       });
   });
   res.send(true);
@@ -245,13 +245,13 @@ app.post("/pushAll", function (req, res) {
           .messaging()
           .send(message)
           .then((response) => {
-            res.send("Successfully sent message");
+            // res.send("Successfully sent message");
             //console.log("Successfully sent message:", response);
           })
           .catch(async (error) => {
             // 기한이 만료되었거나 등록된 앱이나 브라우저가 제거되었을 경우
             // 토큰은 더이상 제대로 동작하지 않으므로 제거해줘야함
-            await deleteToken(token.token);
+            // await deleteToken(token.token);
           });
       });
     } else {

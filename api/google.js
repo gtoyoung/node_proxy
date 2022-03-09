@@ -188,35 +188,38 @@ async function getUserInfo(uid) {
 app.post("/pushForUser", function (req, res) {
   var msg = req.body.msg;
   var tokens = req.body.tokens;
-  tokens.map((token) => {
-    const message = {
-      notification: {
-        title: "Dovb`s Blog",
-        body: msg,
-      },
-      webpush: {
+  if (tokens.length !== 0) {
+    tokens.map((token) => {
+      const message = {
         notification: {
-          requireInteraction: true,
-          icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+          title: "Dovb`s Blog",
+          body: msg,
         },
-        fcm_options: {
-          link: "https://dovb.vercel.app/",
+        webpush: {
+          notification: {
+            requireInteraction: true,
+            icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+          },
+          fcm_options: {
+            link: "https://dovb.vercel.app/",
+          },
         },
-      },
-      token: token,
-    };
+        token: token,
+      };
 
-    admin
-      .messaging()
-      .send(message)
-      .then((response) => {
-        res.send("Successfully sent message");
-      })
-      .catch(async (error) => {
-        //await deleteToken(token);
-      });
-  });
-  res.send(true);
+      admin
+        .messaging()
+        .send(message)
+        .then((response) => {
+          res.send("Successfully sent message");
+        })
+        .catch(async (error) => {
+          //await deleteToken(token);
+        });
+    });
+  } else {
+    res.send("No token");
+  }
 });
 
 app.post("/pushAll", function (req, res) {

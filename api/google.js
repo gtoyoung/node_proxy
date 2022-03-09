@@ -210,12 +210,10 @@ app.post("/pushForUser", function (req, res) {
       .messaging()
       .send(message)
       .then((response) => {
-        console.log("Successfully sent message:", response);
+        res.send("Successfully sent message");
       })
       .catch(async (error) => {
-        await deleteToken(token).then(() => {
-          console.log("유효하지 않은 토큰 제거", error);
-        });
+        await deleteToken(token);
       });
   });
   res.send(true);

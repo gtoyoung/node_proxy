@@ -213,8 +213,9 @@ app.post("/pushForUser", function (req, res) {
         console.log("Successfully sent message:", response);
       })
       .catch(async (error) => {
-        console.log("Error sending message:", error);
-        await deleteToken(token);
+        await deleteToken(token).then(() => {
+          console.log("유효하지 않은 토큰 제거", error);
+        });
       });
   });
   res.send(true);

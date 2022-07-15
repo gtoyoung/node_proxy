@@ -1,4 +1,6 @@
 var express = require("express");
+var schedule = require("node-schedule");
+
 var app = express();
 require("dotenv").config();
 
@@ -22,6 +24,119 @@ async function getTokens() {
         return tokens.val();
       });
   } catch (e) {
+    return null;
+  }
+}
+
+async function getUserTask(uid) {
+  try {
+    return await database
+      .ref(`/users/${uid}/taskData/tasks`)
+      .get()
+      .then((tasks) => {
+        if (tasks.val()) {
+          let taskList = [];
+          for (let index in tasks.val()) {
+            const task = tasks.val()[index];
+            if (task.alertDate) {
+              const taskDate = new Date(task.alertDate);
+              const currentDate = new Date();
+              if (
+                taskDate.getFullYear() === currentDate.getFullYear() &&
+                taskDate.getMonth() === currentDate.getMonth() &&
+                taskDate.getHours() === currentDate.getHours() &&
+                taskDate.getMinutes() === currentDate.getMinutes()
+              ) {
+                taskList.push({
+                  content: task.content,
+                });
+              }
+            }
+          }
+          return taskList;
+        } else {
+          return null;
+        }
+      })
+      .catch(() => {
+        return null;
+      });
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getUserTokens(uid) {
+  try {
+    return await database
+      .ref(`/users/${uid}/token`)
+      .get()
+      .then((tokens) => {
+        if (tokens.val()) {
+          return [...tokens.val()];
+        } else {
+          return null;
+        }
+      })
+      .catch(() => {
+        return null;
+      });
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getAlertList() {
+  try {
+    let today = new Date();
+
+    const data = await admin
+      .auth()
+      .listUsers()
+      .then(async (userList) => {
+        return await Promise.all(
+          userList.users.map((user) => {
+            //Task Data 추출
+            return getUserTokens(user.uid).then(async (tokens) => {
+              if (tokens) {
+                return await Promise.all(
+                  tokens?.map((token) => {
+                    return getUserTask(user.uid).then((tasks) => {
+                      if (tasks) {
+                        return tasks?.map((task) => {
+                          return {
+                            content: task.content,
+                            token: token,
+                          };
+                        });
+                      } else {
+                        return null;
+                      }
+                    });
+                  })
+                );
+              } else {
+                return null;
+              }
+            });
+          })
+        );
+      });
+    let alertList = [];
+    for (let index in data) {
+      if (data[index]) {
+        for (let index2 in data[index]) {
+          if (data[index][index2]) {
+            data[index][index2].forEach((task) => {
+              alertList.push(task);
+            });
+          }
+        }
+      }
+    }
+    return alertList;
+  } catch (e) {
+    console.log(e);
     return null;
   }
 }
@@ -94,35 +209,38 @@ app.get("/getTokens", function (req, res) {
     });
 });
 
-app.post("/pushMsg", function (req, res) {
-  var token = req.body.token;
-  var msg = req.body.msg;
-  const message = {
-    notification: {
-      title: "Dovb`s Blog",
-      body: msg,
-    },
-    webpush: {
-      notification: {
-        requireInteraction: true,
-        icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
-      },
-      fcm_options: {
-        link: "https://dovb.vercel.app/",
-      },
-    },
-    token: token,
-  };
-  admin
-    .messaging()
-    .send(message)
-    .then(() => {
-      res.send("success");
-    })
-    .catch((err) => {
-      res.status(res.statusCode).end();
-      res.send(null);
+app.get("/pushMsg", function (req, res) {});
+
+const j = schedule.scheduleJob("0 56 10 * * ?", async function () {
+  getAlertList().then((alertList) => {
+    alertList?.forEach((alert) => {
+      const message = {
+        notification: {
+          title: "오늘 일정이 있습니다.",
+          body: alert.content,
+        },
+        webpush: {
+          notification: {
+            requireInteraction: true,
+            icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+          },
+          fcm_options: {
+            link: "https://dovb.vercel.app/",
+          },
+        },
+        token: alert.token,
+      };
+      admin
+        .messaging()
+        .send(message)
+        .then(() => {
+          console.log("scheduled message sent");
+        })
+        .catch((err) => {
+          console.log("scheduled message failed");
+        });
     });
+  });
 });
 
 app.post("/pushForUser", function (req, res) {

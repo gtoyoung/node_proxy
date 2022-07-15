@@ -44,6 +44,7 @@ async function getUserTask(uid) {
               if (
                 taskDate.getFullYear() === currentDate.getFullYear() &&
                 taskDate.getMonth() === currentDate.getMonth() &&
+                taskDate.getDate() === currentDate.getDate() &&
                 taskDate.getHours() === currentDate.getHours() &&
                 taskDate.getMinutes() === currentDate.getMinutes()
               ) {
@@ -88,8 +89,6 @@ async function getUserTokens(uid) {
 
 async function getAlertList() {
   try {
-    let today = new Date();
-
     const data = await admin
       .auth()
       .listUsers()

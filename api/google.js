@@ -211,7 +211,6 @@ app.get("/getTokens", function (req, res) {
 });
 
 app.get("/pushMsg", function (req, res) {
-  admin.messaging().send({});
   getAlertList()
     .then((alertList) => {
       alertList?.forEach((alert) => {

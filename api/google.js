@@ -50,6 +50,7 @@ async function getUserTask(uid) {
               ) {
                 taskList.push({
                   content: task.content,
+                  date: task.alertDate,
                 });
               }
             }
@@ -106,6 +107,7 @@ async function getAlertList() {
                           return {
                             content: task.content,
                             token: token,
+                            date: task.date,
                           };
                         });
                       } else {
@@ -209,34 +211,45 @@ app.get("/getTokens", function (req, res) {
 });
 
 app.get("/pushMsg", function (req, res) {
+  admin.messaging().send({});
   getAlertList()
     .then((alertList) => {
       alertList?.forEach((alert) => {
-        const message = {
-          notification: {
-            title: "오늘 일정이 있습니다.",
-            body: alert.content,
-          },
-          webpush: {
+        const alertDate = new Date(alert.date);
+        const currentDate = new Date();
+        if (
+          alertDate.getFullYear() === currentDate.getFullYear() &&
+          alertDate.getMonth() === currentDate.getMonth() &&
+          alertDate.getDate() === currentDate.getDate() &&
+          alertDate.getHours() === currentDate.getHours() &&
+          alertDate.getMinutes() === currentDate.getMinutes()
+        ) {
+          const message = {
             notification: {
-              requireInteraction: true,
-              icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+              title: "오늘 일정이 있습니다.",
+              body: alert.content,
             },
-            fcm_options: {
-              link: "https://dovb.vercel.app/",
+            webpush: {
+              notification: {
+                requireInteraction: true,
+                icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+              },
+              fcm_options: {
+                link: "https://dovb.vercel.app/",
+              },
             },
-          },
-          token: alert.token,
-        };
-        admin
-          .messaging()
-          .send(message)
-          .then(() => {
-            console.log("scheduled message sent");
-          })
-          .catch((err) => {
-            console.log("scheduled message failed");
-          });
+            token: alert.token,
+          };
+          admin
+            .messaging()
+            .send(message)
+            .then(() => {
+              console.log("scheduled message sent");
+            })
+            .catch((err) => {
+              console.log("scheduled message failed");
+            });
+        }
       });
     })
     .then(() => {

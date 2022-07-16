@@ -247,37 +247,37 @@ app.get("/pushMsg", function (req, res) {
     });
 });
 
-// const j = schedule.scheduleJob("* * * * *", async function () {
-//   getAlertList().then((alertList) => {
-//     alertList?.forEach((alert) => {
-//       const message = {
-//         notification: {
-//           title: "오늘 일정이 있습니다.",
-//           body: alert.content,
-//         },
-//         webpush: {
-//           notification: {
-//             requireInteraction: true,
-//             icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
-//           },
-//           fcm_options: {
-//             link: "https://dovb.vercel.app/",
-//           },
-//         },
-//         token: alert.token,
-//       };
-//       admin
-//         .messaging()
-//         .send(message)
-//         .then(() => {
-//           console.log("scheduled message sent");
-//         })
-//         .catch((err) => {
-//           console.log("scheduled message failed");
-//         });
-//     });
-//   });
-// });
+const j = schedule.scheduleJob("* * * * *", async function () {
+  getAlertList().then((alertList) => {
+    alertList?.forEach((alert) => {
+      const message = {
+        notification: {
+          title: "오늘 일정이 있습니다.",
+          body: alert.content,
+        },
+        webpush: {
+          notification: {
+            requireInteraction: true,
+            icon: "https://dovb.vercel.app/icon/favicon-32x32.png",
+          },
+          fcm_options: {
+            link: "https://dovb.vercel.app/",
+          },
+        },
+        token: alert.token,
+      };
+      admin
+        .messaging()
+        .send(message)
+        .then(() => {
+          console.log("scheduled message sent");
+        })
+        .catch((err) => {
+          console.log("scheduled message failed");
+        });
+    });
+  });
+});
 
 app.post("/pushForUser", function (req, res) {
   var msg = req.body.msg;
